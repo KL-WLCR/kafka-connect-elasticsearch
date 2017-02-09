@@ -202,14 +202,21 @@ public class ElasticsearchWriter {
           }
         } catch (IOException e) {
           // FIXME: concurrent tasks could attempt to create the mapping and one of the requests may fail
-          throw new ConnectException("Failed to initialize mapping for index: " + index, e);
+          throw new org.apache.kafka.connect.errors.ConnectException("Failed to initialize mapping for index: " + index, e);
         }
         existingMappings.add(index);
       }
+      IndexableRecord indexableRecord = null;
+      try {
+        indexableRecord = DataConverter.convertRecord(sinkRecord, index, type, ignoreKey, ignoreSchema);
+      } catch (org.apache.kafka.connect.errors.ConnectException e) {
+        log.error("Can't convert record with error" + e.getMessage());
+      }
+      if (indexableRecord != null) {
+        bulkProcessor.add(indexableRecord, flushTimeoutMs);
+      }
 
-      final IndexableRecord indexableRecord = DataConverter.convertRecord(sinkRecord, index, type, ignoreKey, ignoreSchema);
 
-      bulkProcessor.add(indexableRecord, flushTimeoutMs);
     }
   }
 
