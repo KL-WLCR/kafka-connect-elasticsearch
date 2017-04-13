@@ -40,6 +40,13 @@ public class ElasticsearchSinkConnectorConfig extends AbstractConfig {
   public static final String TOPIC_KEY_IGNORE_CONFIG = "topic.key.ignore";
   public static final String SCHEMA_IGNORE_CONFIG = "schema.ignore";
   public static final String TOPIC_SCHEMA_IGNORE_CONFIG = "topic.schema.ignore";
+  public static final String DOCUMENT_VERSION_TYPE_CONFIG = "document.version.type";
+
+  public enum DocumentVersionType {
+    partition_offset,
+    kafka_record_timestamp,
+    ignore
+  }
 
   protected static ConfigDef baseConfigDef() {
     final ConfigDef configDef = new ConfigDef();
@@ -109,7 +116,9 @@ public class ElasticsearchSinkConnectorConfig extends AbstractConfig {
                   group, ++order, Width.LONG, "Topics for 'Ignore Key' mode")
           .define(TOPIC_SCHEMA_IGNORE_CONFIG, Type.LIST, "", Importance.LOW,
                   "List of topics for which ``" + SCHEMA_IGNORE_CONFIG + "`` should be ``true``.",
-                  group, ++order, Width.LONG, "Topics for 'Ignore Schema' mode");
+                  group, ++order, Width.LONG, "Topics for 'Ignore Schema' mode")
+          .define(DOCUMENT_VERSION_TYPE_CONFIG, Type.STRING, DocumentVersionType.partition_offset.name(), Importance.LOW,
+                  "Source for version of elastic document.``" + KEY_IGNORE_CONFIG + "`` should be ``false``.", group, ++order, Width.SHORT, "document offset source");
     }
 
     return configDef;

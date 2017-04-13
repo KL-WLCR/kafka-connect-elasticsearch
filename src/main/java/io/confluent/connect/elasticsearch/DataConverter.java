@@ -16,6 +16,7 @@
 
 package io.confluent.connect.elasticsearch;
 
+import org.apache.kafka.common.record.TimestampType;
 import org.apache.kafka.connect.data.ConnectSchema;
 import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
@@ -76,12 +77,15 @@ public class DataConverter {
     }
   }
 
-  public static IndexableRecord convertRecord(SinkRecord record, String index, String type, boolean ignoreKey, boolean ignoreSchema) {
+  public static IndexableRecord convertRecord(SinkRecord record, String index, String type, boolean ignoreKey, boolean ignoreSchema, ElasticsearchSinkConnectorConfig.DocumentVersionType versionType) {
     final String id;
     if (ignoreKey) {
       id = record.topic() + "+" + String.valueOf((int) record.kafkaPartition()) + "+" + String.valueOf(record.kafkaOffset());
     } else {
       id = DataConverter.convertKey(record.keySchema(), record.key());
+    }
+    if (versionType == null) {
+      throw new IllegalArgumentException("Document must not be null");
     }
 
     final Schema schema;
@@ -95,8 +99,26 @@ public class DataConverter {
     }
 
     final String payload = new String(JSON_CONVERTER.fromConnectData(record.topic(), schema, value), StandardCharsets.UTF_8);
-    final Long version = ignoreKey ? null : record.kafkaOffset();
+
+    final Long version = ignoreKey ? null : getVersion(record, versionType);
     return new IndexableRecord(new Key(index, type, id), payload, version);
+  }
+
+  private static Long getVersion(SinkRecord sinkRecord, ElasticsearchSinkConnectorConfig.DocumentVersionType versionType) {
+
+    switch (versionType) {
+      case ignore:
+        return null;
+      case partition_offset:
+        return sinkRecord.kafkaOffset();
+      case kafka_record_timestamp:
+        if (sinkRecord.timestampType() == TimestampType.NO_TIMESTAMP_TYPE) {
+          throw new ConnectException("Kafka records must contain `timestamp` if ``" + ElasticsearchSinkConnectorConfig.DOCUMENT_VERSION_TYPE_CONFIG + "=" + versionType.name() + "`` set in connector config");
+        }
+        return sinkRecord.timestamp();
+      default:
+        throw new IllegalArgumentException("Unknown version type - " + versionType.name());
+    }
   }
 
   // We need to pre process the Kafka Connect schema before converting to JSON as Elasticsearch
