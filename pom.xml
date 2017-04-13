@@ -6,7 +6,7 @@
 
     <groupId>io.confluent</groupId>
     <artifactId>kafka-connect-elasticsearch</artifactId>
-    <version>3.2.0</version>
+    <version>3.2.0_m1</version>
 
     <properties>
         <confluent.version>3.2.0</confluent.version>
