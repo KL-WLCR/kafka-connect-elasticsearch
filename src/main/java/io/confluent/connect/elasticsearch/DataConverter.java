@@ -115,7 +115,13 @@ public class DataConverter {
         if (sinkRecord.timestampType() == TimestampType.NO_TIMESTAMP_TYPE) {
           throw new ConnectException("Kafka records must contain `timestamp` if ``" + ElasticsearchSinkConnectorConfig.DOCUMENT_VERSION_TYPE_CONFIG + "=" + versionType.name() + "`` set in connector config");
         }
+        if (sinkRecord.timestamp() <= 0) {
+          throw new ConnectException("`timestamp` must be greater than 0 if ``" + ElasticsearchSinkConnectorConfig.DOCUMENT_VERSION_TYPE_CONFIG + "=" + versionType.name() + "`` set in connector config." +
+          "You may concerned to use other document version type for this topic");
+        }
         return sinkRecord.timestamp();
+      case current_time:
+        return System.currentTimeMillis();
       default:
         throw new IllegalArgumentException("Unknown version type - " + versionType.name());
     }

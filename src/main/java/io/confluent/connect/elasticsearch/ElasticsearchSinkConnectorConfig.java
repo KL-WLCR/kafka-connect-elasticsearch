@@ -45,6 +45,7 @@ public class ElasticsearchSinkConnectorConfig extends AbstractConfig {
   public enum DocumentVersionType {
     partition_offset,
     kafka_record_timestamp,
+    current_time,
     ignore
   }
 
