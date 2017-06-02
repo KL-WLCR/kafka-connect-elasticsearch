@@ -16,12 +16,15 @@
 
 package io.confluent.connect.elasticsearch;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.config.ConfigDef.Width;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class ElasticsearchSinkConnectorConfig extends AbstractConfig {
@@ -41,6 +44,14 @@ public class ElasticsearchSinkConnectorConfig extends AbstractConfig {
   public static final String SCHEMA_IGNORE_CONFIG = "schema.ignore";
   public static final String TOPIC_SCHEMA_IGNORE_CONFIG = "topic.schema.ignore";
   public static final String DROP_INVALID_MESSAGE = "drop.invalid.message";
+  public static final String DOCUMENT_VERSION_SOURCE_CONFIG = "document.version.type";
+
+  public enum DocumentVersionSource {
+    partition_offset,
+    record_timestamp,
+    ignore;
+  }
+
 
   protected static ConfigDef baseConfigDef() {
     final ConfigDef configDef = new ConfigDef();
@@ -113,11 +124,36 @@ public class ElasticsearchSinkConnectorConfig extends AbstractConfig {
                   group, ++order, Width.LONG, "Topics for 'Ignore Schema' mode")
           .define(DROP_INVALID_MESSAGE, Type.BOOLEAN, false, Importance.LOW,
                   "Whether to drop kafka message when it cannot be converted to output message.",
-                  group, ++order, Width.LONG, "Drop invalid message");
+                  group, ++order, Width.LONG, "Drop invalid message")
+          .define(DOCUMENT_VERSION_SOURCE_CONFIG, Type.STRING, DocumentVersionSource.partition_offset.name(), Importance.LOW,
+                  "Version for elastic search document. Possible values: " + versionSourceDescription() + ". This parameter is used only when ``" + KEY_IGNORE_CONFIG + "`` is  ``false``.",
+                  group, ++order, Width.SHORT, "Document version source");
     }
 
     return configDef;
   }
+
+  private static String versionSourceDescription() {
+    List<String> versionSourceDocumentation = new ArrayList<>();
+    for (DocumentVersionSource versionSource : DocumentVersionSource.values()) {
+      switch (versionSource) {
+        case partition_offset:
+          versionSourceDocumentation.add(DocumentVersionSource.partition_offset.name() +
+                  "(kafka record offset)");
+          break;
+        case record_timestamp:
+          versionSourceDocumentation.add(DocumentVersionSource.record_timestamp.name() +
+                  "(kafka record timestamp)");
+          break;
+        case ignore:
+          versionSourceDocumentation.add(DocumentVersionSource.ignore.name() +
+                  "(don't set document version)");
+          break;
+      }
+    }
+    return StringUtils.join(versionSourceDocumentation, ',');
+  }
+
 
   public static final ConfigDef CONFIG = baseConfigDef();
 

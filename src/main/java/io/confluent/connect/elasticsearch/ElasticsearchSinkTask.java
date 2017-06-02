@@ -16,6 +16,7 @@
 
 package io.confluent.connect.elasticsearch;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigException;
@@ -25,6 +26,7 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -74,6 +76,15 @@ public class ElasticsearchSinkTask extends SinkTask {
       long retryBackoffMs = config.getLong(ElasticsearchSinkConnectorConfig.RETRY_BACKOFF_MS_CONFIG);
       int maxRetry = config.getInt(ElasticsearchSinkConnectorConfig.MAX_RETRIES_CONFIG);
       boolean dropInvalidMessage = config.getBoolean(ElasticsearchSinkConnectorConfig.DROP_INVALID_MESSAGE);
+      ElasticsearchSinkConnectorConfig.DocumentVersionSource versionSource = null;
+      try {
+        versionSource = ElasticsearchSinkConnectorConfig.DocumentVersionSource.valueOf(
+                config.getString(ElasticsearchSinkConnectorConfig.DOCUMENT_VERSION_SOURCE_CONFIG).toLowerCase());
+      } catch (IllegalArgumentException e) {
+
+        throw new IllegalArgumentException("Version may have one of the following values: " +
+                StringUtils.join(Arrays.asList(ElasticsearchSinkConnectorConfig.DocumentVersionSource.values()), ","));
+      }
 
       if (client != null) {
         this.client = client;
@@ -96,7 +107,8 @@ public class ElasticsearchSinkTask extends SinkTask {
           .setLingerMs(lingerMs)
           .setRetryBackoffMs(retryBackoffMs)
           .setMaxRetry(maxRetry)
-          .setDropInvalidMessage(dropInvalidMessage);
+          .setDropInvalidMessage(dropInvalidMessage)
+          .setVersionSource(versionSource);
 
       writer = builder.build();
       writer.start();
