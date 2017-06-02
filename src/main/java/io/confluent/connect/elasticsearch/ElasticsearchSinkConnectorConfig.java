@@ -40,6 +40,7 @@ public class ElasticsearchSinkConnectorConfig extends AbstractConfig {
   public static final String TOPIC_KEY_IGNORE_CONFIG = "topic.key.ignore";
   public static final String SCHEMA_IGNORE_CONFIG = "schema.ignore";
   public static final String TOPIC_SCHEMA_IGNORE_CONFIG = "topic.schema.ignore";
+  public static final String DROP_INVALID_MESSAGE = "drop.invalid.message";
 
   protected static ConfigDef baseConfigDef() {
     final ConfigDef configDef = new ConfigDef();
@@ -109,7 +110,10 @@ public class ElasticsearchSinkConnectorConfig extends AbstractConfig {
                   group, ++order, Width.LONG, "Topics for 'Ignore Key' mode")
           .define(TOPIC_SCHEMA_IGNORE_CONFIG, Type.LIST, "", Importance.LOW,
                   "List of topics for which ``" + SCHEMA_IGNORE_CONFIG + "`` should be ``true``.",
-                  group, ++order, Width.LONG, "Topics for 'Ignore Schema' mode");
+                  group, ++order, Width.LONG, "Topics for 'Ignore Schema' mode")
+          .define(DROP_INVALID_MESSAGE, Type.BOOLEAN, false, Importance.LOW,
+                  "Whether to drop kafka message when it cannot be converted to output message.",
+                  group, ++order, Width.LONG, "Drop invalid message");
     }
 
     return configDef;
