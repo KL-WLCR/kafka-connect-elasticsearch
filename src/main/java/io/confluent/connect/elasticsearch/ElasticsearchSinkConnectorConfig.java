@@ -77,6 +77,7 @@ public class ElasticsearchSinkConnectorConfig extends AbstractConfig {
   public static final String SCHEMA_IGNORE_CONFIG = "schema.ignore";
   public static final String TOPIC_SCHEMA_IGNORE_CONFIG = "topic.schema.ignore";
   public static final String DROP_INVALID_MESSAGE_CONFIG = "drop.invalid.message";
+  public static final String DOCUMENT_VERSION_SOURCE_CONFIG = "document.version.type";
 
   private static final String KEY_IGNORE_DOC =
       "Whether to ignore the record key for the purpose of forming the Elasticsearch document ID."
@@ -96,7 +97,15 @@ public class ElasticsearchSinkConnectorConfig extends AbstractConfig {
       "List of topics for which ``" + SCHEMA_IGNORE_CONFIG + "`` should be ``true``.";
   private static final String DROP_INVALID_MESSAGE_DOC =
           "Whether to drop kafka message when it cannot be converted to output message.";
-
+  private static final String DOCUMENT_VERSION_SOURCE_DOC =
+      "Elasticsearch document version source. Possible values: "
+      + DocumentVersionSource.partition_offset.name()
+              + "(kafka record partition offset), "
+      + DocumentVersionSource.record_timestamp.name()
+              + "(kafka record timestamp), "
+      + DocumentVersionSource.ignore.name()
+              + "(don't set document version). "
+      + "This option applies only when ``" + KEY_IGNORE_CONFIG + "`` is set to false";
 
   protected static ConfigDef baseConfigDef() {
     final ConfigDef configDef = new ConfigDef();
@@ -261,8 +270,17 @@ public class ElasticsearchSinkConnectorConfig extends AbstractConfig {
         group,
         ++order,
         Width.LONG,
-        "Drop invalid messages");
-
+        "Drop invalid messages"
+    ).define(
+        DOCUMENT_VERSION_SOURCE_CONFIG,
+        Type.STRING,
+        DocumentVersionSource.partition_offset.name(),
+        Importance.LOW,
+        DOCUMENT_VERSION_SOURCE_DOC,
+        group,
+        ++order,
+        Width.LONG,
+        "Elasticsearch document version source");
 
   }
 
